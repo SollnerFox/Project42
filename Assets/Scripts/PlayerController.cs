@@ -1,15 +1,22 @@
 using UnityEngine;
 
+[RequireComponent(typeof(CharacterController))]
 public class PlayerController : MonoBehaviour
 {
-    [SerializeField] private Rigidbody _rb;
+    //[SerializeField] private Rigidbody _rb;
     [SerializeField] private float _speed = 5;
     [SerializeField] private float _turnSpeed = 360;
+    
+    private CharacterController _controller;
     private Camera _mainCamera;
     private Plane _groundPlane;
 
+    private float _currentAttractionCharacter = 0f;
+    private float _gravityForce = 20f;
+
     private void Awake()
     {
+        _controller = GetComponent<CharacterController>();
         _mainCamera = Camera.main;
         _groundPlane = new Plane(Vector3.up, Vector3.zero);
     }
@@ -22,6 +29,7 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         Move();
+        GravityHadling();
     }
 
     private void Look()
@@ -43,10 +51,16 @@ public class PlayerController : MonoBehaviour
 
     private void Move()
     {
-        Vector3 forwardMove = transform.forward * Input.GetAxisRaw("Vertical") * _speed * Time.deltaTime;
-        Vector3 rightMove = transform.right * Input.GetAxisRaw("Horizontal") * _speed * Time.deltaTime;
+        Vector3 moveDirection =
+            (transform.forward * Input.GetAxisRaw("Vertical") + transform.right * Input.GetAxisRaw("Horizontal")) *
+            _speed * Time.deltaTime + Vector3.up * _currentAttractionCharacter * Time.deltaTime;
+        _controller.Move(moveDirection);
+    }
 
-        _rb.MovePosition(transform.position + forwardMove + rightMove);
+    private void GravityHadling()
+    {
+        if (!_controller.isGrounded) _currentAttractionCharacter -= _gravityForce * Time.deltaTime;
+        else _currentAttractionCharacter = 0f;
     }
 }
 
