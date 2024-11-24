@@ -35,7 +35,8 @@ public class PlayerController : MonoBehaviour
     private void Look()
     {
         Ray ray = _mainCamera.ScreenPointToRay(Input.mousePosition);
-        if (_groundPlane.Raycast(ray, out float enter))
+        Debug.DrawRay(ray.origin, ray.direction * 100, Color.red);
+        /*if (_groundPlane.Raycast(ray, out float enter))
         {
             Vector3 targetPoint = ray.GetPoint(enter);
             Vector3 direction = targetPoint - transform.position;
@@ -46,6 +47,11 @@ public class PlayerController : MonoBehaviour
                 Quaternion targetRotation = Quaternion.LookRotation(direction.ToIso(), Vector3.up);
                 transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, _turnSpeed * Time.deltaTime);
             }
+        }*/
+        if (Physics.Raycast(ray, out RaycastHit hit))
+        {
+            Vector3 lookDirection = new Vector3(hit.point.x - transform.position.x, 0, hit.point.z - transform.position.z);
+            transform.LookAt(lookDirection);
         }
     }
 
