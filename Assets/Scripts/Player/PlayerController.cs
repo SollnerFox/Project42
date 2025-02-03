@@ -7,7 +7,6 @@ using UnityEngine.InputSystem;
 public class PlayerController : MonoBehaviour
 {
     [SerializeField] private float moveSpeed = 5f;
-    [SerializeField] private float rotationSpeed = 15f;
     [SerializeField] private float gravity = 9.81f;
     [SerializeField] private Animator animator;
     
@@ -17,11 +16,8 @@ public class PlayerController : MonoBehaviour
     private float verticalVelocity;
 
     private CharacterController controller;
-    private void Awake()
-    {
-        controller = GetComponent<CharacterController>();
-        //animator = GetComponentInChildren<Animator>();
-    }
+    private void Awake() => controller = GetComponent<CharacterController>();
+    
 
     public void OnMove(InputAction.CallbackContext context)
     {
@@ -43,19 +39,27 @@ public class PlayerController : MonoBehaviour
     {
         Vector3 movement = new Vector3(move.x, 0f, move.y);
         movement.y = VerticalVelocityCalculation();
-        controller.Move(movement.ToIso() * moveSpeed * Time.deltaTime);
-        float forwardValue = Vector3.Dot(movement, transform.right.ToIso());
-        animator.SetFloat("Walk", forwardValue);
+        if (movement.magnitude > 0f)
+        {
+            movement.Normalize();
+            controller.Move(movement.ToIso() * moveSpeed * Time.deltaTime);
+        }
+        float velocityZ = Vector3.Dot(movement, transform.forward);
+        float velocityX = Vector3.Dot(movement, transform.right);
+        animator.SetFloat("VelocityZ", velocityZ, 0.1f, Time.deltaTime);
+        animator.SetFloat("VelocityX", velocityX, 0.1f, Time.deltaTime);
     }
     private float VerticalVelocityCalculation()
     {
         if (controller.isGrounded)
         {
             verticalVelocity = -1f;
+            animator.CrossFade("Movement", 0.1f);
         }
         else
         {
             verticalVelocity -= gravity * Time.deltaTime;
+            animator.CrossFade("Fall", 0.1f);
         }
         return verticalVelocity;
     }
@@ -64,25 +68,16 @@ public class PlayerController : MonoBehaviour
     {
         RaycastHit hit;
         Ray ray = Camera.main.ScreenPointToRay(look);
-        if (Physics.Raycast(ray, out hit))
+        if (Physics.Raycast(ray, out hit, Mathf.Infinity))
         {
-            rotationTarget = hit.point;
-        }
-        else
-        {
-            rotationTarget = transform.position + transform.forward * 10f;
-        }
-
-        Vector3 lookPos = rotationTarget - transform.position;
-        lookPos.y = 0;
-
-        if (lookPos != Vector3.zero)
-        {
-            Quaternion rotation = Quaternion.LookRotation(lookPos);
-            transform.rotation = Quaternion.Slerp(transform.rotation, rotation, Time.deltaTime * rotationSpeed);
+            var direction = hit.point - transform.position;
+            direction.y = 0f;
+            //direction.Normalize();
+            transform.forward = direction;
             Debug.DrawRay(transform.position, transform.forward * 3f, Color.red);
-        }
+        }  
     }
+    
 
     
 }
